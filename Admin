@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Admin — Reporte de Vuelos PUJ</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c26;
+      --surface3: #242433;
+      --border: rgba(255,255,255,0.08);
+      --text: #f0f0f8;
+      --muted: rgba(240,240,248,0.50);
+      --accent: #4f8eff;
+      --accent-bg: rgba(79,142,255,0.14);
+      --accent-bd: rgba(79,142,255,0.34);
+      --ok: #22c55e;
+      --ok-bg: rgba(34,197,94,0.12);
+      --ok-bd: rgba(34,197,94,0.24);
+      --warn: #f59e0b;
+      --warn-bg: rgba(245,158,11,0.12);
+      --warn-bd: rgba(245,158,11,0.24);
+      --danger: #ef4444;
+      --danger-bg: rgba(239,68,68,0.12);
+      --danger-bd: rgba(239,68,68,0.24);
+      --mono: 'DM Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+      --shadow: 0 12px 30px rgba(0,0,0,0.28);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 12px 0;
+      background: linear-gradient(to bottom, rgba(10,10,15,0.98), rgba(10,10,15,0.88));
+      backdrop-filter: blur(8px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-bd);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button, .btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform .08s ease, border-color .18s ease, background .18s ease, opacity .18s ease;
+    }
+
+    button:hover, .btn:hover { border-color: rgba(255,255,255,0.18); background: var(--surface2); }
+    button:active, .btn:active { transform: scale(.99); }
+    button.primary { background: var(--accent); border-color: transparent; color: #fff; }
+    button.danger { background: var(--danger-bg); border-color: var(--danger-bd); color: #ffb4b4; }
+    button.ghost { background: transparent; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+
+    .grid-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat {
+      padding: 16px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-family: var(--mono);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .filters {
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-family: var(--sans);
+      font-size: 14px;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      background: var(--surface3);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    .list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .entry {
+      padding: 16px;
+    }
+
+    .entry-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .flight-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 5px;
+    }
+
+    .flight-num {
+      font-size: 20px;
+      font-weight: 700;
+      font-family: var(--mono);
+      letter-spacing: .5px;
+    }
+
+    .airline {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .entry-date {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      white-space: nowrap;
+    }
+
+    .badge.ok { background: var(--ok-bg); border-color: var(--ok-bd); color: #9ff0b8; }
+    .badge.warn { background: var(--warn-bg); border-color: var(--warn-bd); color: #ffd892; }
+    .badge.info { background: var(--accent-bg); border-color: var(--accent-bd); color: #b7d0ff; }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .meta {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 11px 12px;
+    }
+
+    .meta-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      font-family: var(--mono);
+    }
+
+    .meta-value {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .agents-box, .notes-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+
+    .box-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      font-family: var(--mono);
+    }
+
+    .agents-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .agent-chip {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .notes-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #e7e7f0;
+      white-space: pre-wrap;
+    }
+
+    .entry-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+
+    .empty {
+      padding: 30px 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .login-wrap {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      padding: 22px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .login-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .login-sub {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    .login-error {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #ffb4b4;
+      display: none;
+    }
+
+    .login-error.show {
+      display: block;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .loading {
+      text-align: center;
+      color: var(--muted);
+      padding: 28px 0;
+      font-size: 14px;
+    }
+
+    @media (max-width: 980px) {
+      .grid-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .filters-grid { grid-template-columns: 1fr 1fr; }
+      .meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 640px) {
+      .wrap { padding: 14px; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .actions { width: 100%; }
+      .actions button { flex: 1; }
+      .grid-stats { grid-template-columns: 1fr; }
+      .filters-grid { grid-template-columns: 1fr; }
+      .meta-grid { grid-template-columns: 1fr; }
+      .entry-top { flex-direction: column; }
+      .badges { justify-content: flex-start; }
+      .flight-num { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loginView" class="login-wrap">
+    <div class="login-card">
+      <div class="brand" style="margin-bottom:18px;">
+        <div class="brand-icon">🔐</div>
+        <div>
+          <div class="brand-title">Acceso admin</div>
+          <div class="brand-sub">PUJ · Soporte de Líneas Aéreas</div>
+        </div>
+      </div>
+
+      <div class="login-title">Panel privado</div>
+      <div class="login-sub">
+        Ingresa tu PIN para ver el historial completo, exportar CSV y administrar los registros.
+      </div>
+
+      <div class="field">
+        <label for="pinInput">PIN</label>
+        <input id="pinInput" type="password" inputmode="numeric" maxlength="12" placeholder="Ingresa tu PIN" />
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:14px;">
+        <button id="loginBtn" class="primary" style="flex:1;">Entrar</button>
+      </div>
+
+      <div id="loginError" class="login-error">PIN incorrecto.</div>
+    </div>
+  </div>
+
+  <div id="appView" class="hidden">
+    <div class="wrap">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-icon">📊</div>
+          <div>
+            <div class="brand-title">Admin · Reporte de Vuelos</div>
+            <div class="brand-sub">PUJ · Soporte de Líneas Aéreas</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="copySummaryBtn">Copiar resumen</button>
+          <button id="exportCsvBtn">Exportar CSV</button>
+          <button id="logoutBtn" class="ghost">Salir</button>
+        </div>
+      </div>
+
+      <div class="grid-stats">
+        <div class="card stat">
+          <div class="stat-label">Total</div>
+          <div class="stat-value" id="statTotal">0</div>
+        </div>
+        <div class="card stat">
+          <div class="stat-label">Hoy</div>
+          <div class="stat-value" id="statToday">0</div>
+        </div>
+        <div class="card stat">
+          <div class="stat-label">Esta semana</div>
+          <div class="stat-value" id="statWeek">0</div>
+        </div>
+        <div class="card stat">
+          <div class="stat-label">Promedio agentes</div>
+          <div class="stat-value" id="statAvg">0.0</div>
+        </div>
+      </div>
+
+      <div class="card filters">
+        <div class="section-head">
+          <div class="section-title">Filtros</div>
+          <button id="clearFiltersBtn" class="ghost">Limpiar</button>
+        </div>
+
+        <div class="filters-grid">
+          <div class="field">
+            <label for="searchInput">Buscar</label>
+            <input id="searchInput" type="text" placeholder="Vuelo, aerolínea, gate, agente..." />
+          </div>
+
+          <div class="field">
+            <label for="dateFrom">Desde</label>
+            <input id="dateFrom" type="date" />
+          </div>
+
+          <div class="field">
+            <label for="dateTo">Hasta</label>
+            <input id="dateTo" type="date" />
+          </div>
+
+          <div class="field">
+            <label for="tipoFilter">Tipo</label>
+            <select id="tipoFilter">
+              <option value="">Todos</option>
+              <option value="normal">Normal</option>
+              <option value="over">OVER</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="workFilter">Trabajo</label>
+            <select id="workFilter">
+              <option value="">Todos</option>
+              <option value="Descarga">Descarga</option>
+              <option value="Carga">Carga</option>
+              <option value="Ambos">Ambos</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div class="section-title">Historial</div>
+        <div id="countText" style="font-size:13px; color:var(--muted);">0 registros</div>
+      </div>
+
+      <div id="loading" class="loading">Cargando registros...</div>
+      <div id="list" class="list hidden"></div>
+      <div id="empty" class="empty hidden">No hay registros para mostrar.</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      query,
+      orderBy,
+      onSnapshot,
+      deleteDoc,
+      doc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // ── PEGA TU CONFIG DE FIREBASE AQUÍ ───────────────────────────
+    const firebaseConfig = {
+      apiKey: "REPLACE_API_KEY",
+      authDomain: "REPLACE_AUTH_DOMAIN",
+      projectId: "REPLACE_PROJECT_ID",
+      storageBucket: "REPLACE_STORAGE_BUCKET",
+      messagingSenderId: "REPLACE_SENDER_ID",
+      appId: "REPLACE_APP_ID"
+    };
+    // ──────────────────────────────────────────────────────────────
+
+    const ADMIN_PIN = '1234';
+
+    const loginView = document.getElementById('loginView');
+    const appView = document.getElementById('appView');
+    const pinInput = document.getElementById('pinInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginError = document.getElementById('loginError');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const loadingEl = document.getElementById('loading');
+    const listEl = document.getElementById('list');
+    const emptyEl = document.getElementById('empty');
+    const countText = document.getElementById('countText');
+
+    const statTotal = document.getElementById('statTotal');
+    const statToday = document.getElementById('statToday');
+    const statWeek = document.getElementById('statWeek');
+    const statAvg = document.getElementById('statAvg');
+
+    const searchInput = document.getElementById('searchInput');
+    const dateFrom = document.getElementById('dateFrom');
+    const dateTo = document.getElementById('dateTo');
+    const tipoFilter = document.getElementById('tipoFilter');
+    const workFilter = document.getElementById('workFilter');
+    const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const copySummaryBtn = document.getElementById('copySummaryBtn');
+
+    let db;
+    let allRecords = [];
+    let filteredRecords = [];
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+    } catch (e) {
+      alert('Firebase no está configurado correctamente en admin.html');
+      console.error(e);
+    }
+
+    const sessionKey = 'airline_support_admin_auth';
+
+    function isLoggedIn() {
+      return sessionStorage.getItem(sessionKey) === 'ok';
+    }
+
+    function showApp() {
+      loginView.classList.add('hidden');
+      appView.classList.remove('hidden');
+    }
+
+    function showLogin() {
+      appView.classList.add('hidden');
+      loginView.classList.remove('hidden');
+      pinInput.value = '';
+    }
+
+    function handleLogin() {
+      const pin = pinInput.value.trim();
+      if (pin === ADMIN_PIN) {
+        sessionStorage.setItem(sessionKey, 'ok');
+        loginError.classList.remove('show');
+        showApp();
+        startRealtime();
+      } else {
+        loginError.classList.add('show');
+      }
+    }
+
+    loginBtn.addEventListener('click', handleLogin);
+    pinInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      sessionStorage.removeItem(sessionKey);
+      location.reload();
+    });
+
+    if (isLoggedIn()) {
+      showApp();
+      startRealtime();
+    } else {
+      showLogin();
+    }
+
+    function startRealtime() {
+      if (!db) return;
+      if (startRealtime.started) return;
+      startRealtime.started = true;
+
+      const q = query(collection(db, 'understaffed_flights'), orderBy('createdAt', 'desc'));
+      onSnapshot(q, (snap) => {
+        allRecords = snap.docs.map(d => ({
+          id: d.id,
+          ...d.data()
+        }));
+        applyFilters();
+      }, (err) => {
+        loadingEl.textContent = 'Error cargando registros.';
+        console.error(err);
+      });
+    }
+
+    function normalizeText(v) {
+      return (v || '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+    }
+
+    function getTodayString() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function getWeekStart(d = new Date()) {
+      const x = new Date(d);
+      const day = x.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      x.setHours(0,0,0,0);
+      x.setDate(x.getDate() + diff);
+      return x;
+    }
+
+    function toDateOnlyValue(dateStr) {
+      if (!dateStr) return null;
+      return new Date(dateStr + 'T00:00:00');
+    }
+
+    function applyFilters() {
+      const q = normalizeText(searchInput.value.trim());
+      const from = dateFrom.value;
+      const to = dateTo.value;
+      const tipo = tipoFilter.value;
+      const work = workFilter.value;
+
+      filteredRecords = allRecords.filter(r => {
+        const haystack = normalizeText([
+          r.flightNum,
+          r.airline,
+          r.gate,
+          r.tipo,
+          r.workType,
+          r.notes,
+          ...(Array.isArray(r.agents) ? r.agents : [])
+        ].join(' '));
+
+        if (q && !haystack.includes(q)) return false;
+        if (tipo && (r.tipo || '') !== tipo) return false;
+        if (work && (r.workType || '') !== work) return false;
+
+        if (from) {
+          if (!r.date || r.date < from) return false;
+        }
+        if (to) {
+          if (!r.date || r.date > to) return false;
+        }
+
+        return true;
+      });
+
+      renderStats();
+      renderList();
+    }
+
+    function renderStats() {
+      const today = getTodayString();
+      const weekStart = getWeekStart();
+
+      const total = filteredRecords.length;
+      const todayCount = filteredRecords.filter(r => r.date === today).length;
+      const weekCount = filteredRecords.filter(r => {
+        const d = toDateOnlyValue(r.date);
+        return d && d >= weekStart;
+      }).length;
+
+      const avgAgents = total
+        ? filteredRecords.reduce((sum, r) => sum + Number(r.agentCount || (Array.isArray(r.agents) ? r.agents.length : 0) || 0), 0) / total
+        : 0;
+
+      statTotal.textContent = String(total);
+      statToday.textContent = String(todayCount);
+      statWeek.textContent = String(weekCount);
+      statAvg.textContent = avgAgents.toFixed(1);
+    }
+
+    function badgeTipo(tipo) {
+      if (tipo === 'over') return `<span class="badge warn">🌙 OVER</span>`;
+      if (tipo === 'normal') return `<span class="badge info">✈ Normal</span>`;
+      return '';
+    }
+
+    function badgeWork(work) {
+      if (!work) return '';
+      return `<span class="badge ok">${escapeHtml(work)}</span>`;
+    }
+
+    function timeSummary(r) {
+      if (r.tipo === 'over') {
+        return r.std ? `STD ${r.std}` : 'STD no indicada';
+      }
+      const parts = [];
+      if (r.bloqueo) parts.push(`Bloqueo ${r.bloqueo}`);
+      if (r.etd) parts.push(`ETD ${r.etd}`);
+      return parts.length ? parts.join(' · ') : 'Sin hora registrada';
+    }
+
+    function escapeHtml(v) {
+      return (v ?? '').toString()
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function renderList() {
+      loadingEl.classList.add('hidden');
+      listEl.classList.remove('hidden');
+
+      countText.textContent = `${filteredRecords.length} registro${filteredRecords.length === 1 ? '' : 's'}`;
+
+      if (!filteredRecords.length) {
+        listEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+
+      listEl.innerHTML = filteredRecords.map(r => {
+        const agents = Array.isArray(r.agents) ? r.agents : [];
+        const notes = (r.notes || '').trim();
+
+        return `
+          <div class="card entry">
+            <div class="entry-top">
+              <div>
+                <div class="flight-line">
+                  <div class="flight-num">${escapeHtml(r.flightNum || '—')}</div>
+                  <div class="airline">${escapeHtml(r.airline || 'Sin aerolínea')}</div>
+                </div>
+                <div class="entry-date">${escapeHtml(r.date || 'Sin fecha')}</div>
+              </div>
+
+              <div class="badges">
+                ${badgeTipo(r.tipo)}
+                ${badgeWork(r.workType)}
+              </div>
+            </div>
+
+            <div class="meta-grid">
+              <div class="meta">
+                <div class="meta-label">Gate / Posición</div>
+                <div class="meta-value">${escapeHtml(r.gate || '—')}</div>
+              </div>
+              <div class="meta">
+                <div class="meta-label">Horario</div>
+                <div class="meta-value">${escapeHtml(timeSummary(r))}</div>
+              </div>
+              <div class="meta">
+                <div class="meta-label">Agentes</div>
+                <div class="meta-value">${escapeHtml(String(r.agentCount || agents.length || 0))}</div>
+              </div>
+              <div class="meta">
+                <div class="meta-label">Creado</div>
+                <div class="meta-value">${formatCreatedAt(r.createdAt)}</div>
+              </div>
+            </div>
+
+            <div class="agents-box">
+              <div class="box-label">Personal que hizo el vuelo</div>
+              <div class="agents-list">
+                ${
+                  agents.length
+                    ? agents.map(a => `<span class="agent-chip">${escapeHtml(a)}</span>`).join('')
+                    : `<span class="agent-chip">Sin nombres</span>`
+                }
+              </div>
+            </div>
+
+            ${
+              notes
+                ? `
+                  <div class="notes-box">
+                    <div class="box-label">Contexto adicional</div>
+                    <div class="notes-text">${escapeHtml(notes)}</div>
+                  </div>
+                `
+                : ''
+            }
+
+            <div class="entry-actions">
+              <button class="danger" data-delete="${escapeHtml(r.id)}">Eliminar</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      [...document.querySelectorAll('[data-delete]')].forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-delete');
+          const ok = confirm('¿Eliminar este registro? Esta acción no se puede deshacer.');
+          if (!ok) return;
+
+          try {
+            await deleteDoc(doc(db, 'understaffed_flights', id));
+          } catch (err) {
+            alert('No se pudo eliminar el registro.');
+            console.error(err);
+          }
+        });
+      });
+    }
+
+    function formatCreatedAt(ts) {
+      try {
+        if (!ts) return '—';
+        let d;
+        if (typeof ts.toDate === 'function') d = ts.toDate();
+        else d = new Date(ts);
+        if (isNaN(d.getTime())) return '—';
+        return new Intl.DateTimeFormat('es-DO', {
+          dateStyle: 'short',
+          timeStyle: 'short'
+        }).format(d);
+      } catch {
+        return '—';
+      }
+    }
+
+    function csvValue(v) {
+      const s = (v ?? '').toString().replaceAll('"', '""');
+      return `"${s}"`;
+    }
+
+    function exportCsv() {
+      if (!filteredRecords.length) {
+        alert('No hay registros para exportar.');
+        return;
+      }
+
+      const rows = [
+        [
+          'Fecha',
+          'Vuelo',
+          'Aerolínea',
+          'Gate',
+          'Tipo',
+          'Bloqueo',
+          'ETD',
+          'STD',
+          'Trabajo',
+          'Cantidad de agentes',
+          'Agentes',
+          'Observaciones',
+          'Creado'
+        ]
+      ];
+
+      filteredRecords.forEach(r => {
+        rows.push([
+          r.date || '',
+          r.flightNum || '',
+          r.airline || '',
+          r.gate || '',
+          r.tipo || '',
+          r.bloqueo || '',
+          r.etd || '',
+          r.std || '',
+          r.workType || '',
+          String(r.agentCount || (Array.isArray(r.agents) ? r.agents.length : 0) || 0),
+          Array.isArray(r.agents) ? r.agents.join(' | ') : '',
+          r.notes || '',
+          formatCreatedAt(r.createdAt)
+        ]);
+      });
+
+      const csv = rows.map(row => row.map(csvValue).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `understaffed-flights-${getTodayString()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function copySummary() {
+      if (!filteredRecords.length) {
+        alert('No hay registros para resumir.');
+        return;
+      }
+
+      const total = filteredRecords.length;
+      const over = filteredRecords.filter(r => r.tipo === 'over').length;
+      const normal = filteredRecords.filter(r => r.tipo === 'normal').length;
+
+      const byAirline = {};
+      filteredRecords.forEach(r => {
+        const key = r.airline || 'Sin aerolínea';
+        byAirline[key] = (byAirline[key] || 0) + 1;
+      });
+
+      const topAirlines = Object.entries(byAirline)
+        .sort((a,b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([name, qty], i) => `${i + 1}. ${name}: ${qty}`)
+        .join('\n');
+
+      const summary = [
+        `Resumen de vuelos understaffed`,
+        ``,
+        `Total registros: ${total}`,
+        `Normal: ${normal}`,
+        `OVER: ${over}`,
+        ``,
+        `Top aerolíneas:`,
+        topAirlines || 'Sin datos'
+      ].join('\n');
+
+      try {
+        await navigator.clipboard.writeText(summary);
+        alert('Resumen copiado.');
+      } catch {
+        alert(summary);
+      }
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    dateFrom.addEventListener('change', applyFilters);
+    dateTo.addEventListener('change', applyFilters);
+    tipoFilter.addEventListener('change', applyFilters);
+    workFilter.addEventListener('change', applyFilters);
+
+    clearFiltersBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      dateFrom.value = '';
+      dateTo.value = '';
+      tipoFilter.value = '';
+      workFilter.value = '';
+      applyFilters();
+    });
+
+    exportCsvBtn.addEventListener('click', exportCsv);
+    copySummaryBtn.addEventListener('click', copySummary);
+  </script>
+</body>
+</html>
