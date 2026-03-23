@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Reporte de Vuelo — PUJ</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f8;
+    --muted: rgba(240,240,248,0.42);
+    --accent: #4f8eff;
+    --accent-bg: rgba(79,142,255,0.14);
+    --accent-bd: rgba(79,142,255,0.38);
+    --ok-bg: rgba(34,197,94,0.11);
+    --ok-bd: rgba(34,197,94,0.28);
+    --ok-tx: #86efac;
+    --danger: #ef4444;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 48px; }
+
+  .hdr { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; position: sticky; top: 0; background: var(--bg); z-index: 10; }
+  .hdr-icon { width: 38px; height: 38px; background: var(--accent-bg); border: 1px solid var(--accent-bd); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .hdr-title { font-size: 15px; font-weight: 600; }
+  .hdr-sub { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 1px; }
+  .prog { height: 2px; background: var(--border); }
+  .prog-fill { height: 100%; background: var(--accent); width: 0%; transition: width .35s; }
+
+  .body { padding: 0 16px; }
+  .sec { font-size: 10px; font-weight: 600; letter-spacing: 1.4px; color: var(--muted); text-transform: uppercase; font-family: var(--mono); padding: 22px 0 10px; }
+  .field { margin-bottom: 11px; }
+  .lbl { font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px; font-weight: 500; }
+  .err-msg { font-size: 11px; color: var(--danger); margin-top: 4px; display: none; }
+  .field.bad .err-msg { display: block; }
+  .field.bad input, .field.bad select { border-color: var(--danger) !important; }
+
+  input, select, textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-family: var(--sans);
+    font-size: 15px; padding: 11px 13px; outline: none;
+    appearance: none; -webkit-appearance: none;
+    transition: border-color .18s, background .18s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); background: var(--surface2); }
+  input::placeholder { color: rgba(240,240,248,0.18); }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='rgba(240,240,248,.3)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 13px center; padding-right: 34px;
+  }
+  select option { background: #1c1c26; }
+  textarea { resize: none; min-height: 76px; line-height: 1.55; }
+  #flight-num { font-family: var(--mono); font-size: 18px; letter-spacing: 1px; font-weight: 500; text-transform: uppercase; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .chip {
+    padding: 10px 5px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 9px; font-size: 12px; font-weight: 500; text-align: center;
+    cursor: pointer; color: var(--muted); user-select: none; -webkit-user-select: none;
+    line-height: 1.3; transition: background .12s, border-color .12s, color .12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .chip.on { background: var(--accent-bg); border-color: var(--accent-bd); color: #a8c8ff; }
+
+  .pills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pill {
+    padding: 13px 6px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; font-size: 13px; font-weight: 500; text-align: center;
+    cursor: pointer; color: var(--muted); user-select: none; -webkit-user-select: none;
+    font-family: var(--mono); transition: background .12s, border-color .12s, color .12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pill.on { background: var(--accent-bg); border-color: var(--accent-bd); color: #a8c8ff; }
+
+  .foot { padding: 18px 16px 0; }
+  .submit {
+    width: 100%; padding: 15px; background: var(--accent); color: #fff;
+    border: none; border-radius: 12px; font-family: var(--sans);
+    font-size: 16px; font-weight: 600; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity .15s, transform .1s;
+  }
+  .submit:active { opacity: .85; transform: scale(.99); }
+  .submit:disabled { opacity: .38; cursor: not-allowed; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(90px);
+    background: var(--ok-bg); border: 1px solid var(--ok-bd); color: var(--ok-tx);
+    padding: 11px 22px; border-radius: 50px; font-size: 14px; font-weight: 500;
+    white-space: nowrap; transition: transform .32s cubic-bezier(.34,1.56,.64,1); z-index: 200;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(10,10,15,.82); z-index: 300; align-items: center; justify-content: center; flex-direction: column; gap: 11px; }
+  .overlay.show { display: flex; }
+  .spin { width: 30px; height: 30px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: sp .7s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  .overlay p { font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="overlay" class="overlay"><div class="spin"></div><p>Guardando...</p></div>
+<div class="toast" id="toast">✓ Registro guardado</div>
+
+<div class="hdr">
+  <div class="hdr-icon">✈</div>
+  <div>
+    <div class="hdr-title">Reporte de Vuelo</div>
+    <div class="hdr-sub">PUJ · Soporte de Líneas Aéreas</div>
+  </div>
+</div>
+<div class="prog"><div class="prog-fill" id="prog"></div></div>
+
+<div class="body">
+  <div class="sec">Vuelo</div>
+
+  <div class="field" id="f-fn">
+    <label class="lbl">Número de vuelo *</label>
+    <input type="text" id="flight-num" placeholder="AA123" autocapitalize="characters" maxlength="8">
+    <div class="err-msg">Requerido</div>
+  </div>
+
+  <div class="g2">
+    <div class="field" id="f-al">
+      <label class="lbl">Aerolínea *</label>
+      <select id="airline" onchange="handleAirline(this.value)">
+        <option value="">Seleccionar</option>
+        <optgroup label="Terminal B">
+          <option>American Airlines</option>
+          <option>Avianca</option>
+          <option>British Airways</option>
+          <option>Copa Airlines</option>
+          <option>Delta Air Lines</option>
+          <option>Frontier Airlines</option>
+          <option>Iberojet</option>
+          <option>Southwest Airlines</option>
+        </optgroup>
+        <optgroup label="Terminal A">
+          <option>Aerolíneas Argentinas</option>
+          <option>Air Canada Rouge</option>
+          <option>Air Caraibes</option>
+          <option>Air Europa</option>
+          <option>Air Transat</option>
+          <option>Allegiant Air</option>
+          <option>Arajet</option>
+          <option>Condor</option>
+          <option>Edelweiss Air</option>
+          <option>Eurowings Discover</option>
+          <option>Gol Linhas Aéreas</option>
+          <option>Global Crossing Airlines</option>
+          <option>Iberia</option>
+          <option>JetBlue</option>
+          <option>JetSMART</option>
+          <option>LATAM</option>
+          <option>Neos</option>
+          <option>Rutaca</option>
+          <option>SKY Airline</option>
+          <option>Sky Cana</option>
+          <option>Sky High Aviation</option>
+          <option>Spirit Airlines</option>
+          <option>Sun Country Airlines</option>
+          <option>Sunwing Airlines</option>
+          <option>Swift Air</option>
+          <option>TUI Airways</option>
+          <option>TUI fly</option>
+          <option>Turpial Airlines</option>
+          <option>United Airlines</option>
+          <option>WestJet</option>
+          <option>Wingo</option>
+          <option>World2Fly</option>
+        </optgroup>
+        <option value="__otra__">Otra aerolínea...</option>
+      </select>
+      <input type="text" id="airline-custom" placeholder="Nombre de la aerolínea" style="display:none;margin-top:8px" autocapitalize="words">
+      <div class="err-msg">Requerido</div>
+    </div>
+    <div class="field">
+      <label class="lbl">Gate / Posición</label>
+      <input type="text" id="gate" placeholder="A3" autocapitalize="characters" maxlength="5">
+    </div>
+  </div>
+
+  <div class="field" id="f-dt">
+    <label class="lbl">Fecha *</label>
+    <input type="date" id="flight-date">
+    <div class="err-msg">Requerido</div>
+  </div>
+
+  <div class="field">
+    <label class="lbl">Tipo de operación *</label>
+    <div class="pills" id="tipo-pills">
+      <div class="pill" id="tipo-normal" onclick="selectTipo('normal')">✈ Normal</div>
+      <div class="pill" id="tipo-over" onclick="selectTipo('over')">🌙 OVER</div>
+    </div>
+  </div>
+
+  <div id="fields-normal" style="display:none">
+    <div class="g2">
+      <div class="field">
+        <label class="lbl">Bloqueo</label>
+        <input type="time" id="sched-time">
+      </div>
+      <div class="field">
+        <label class="lbl">ETD</label>
+        <input type="time" id="actual-time">
+      </div>
+    </div>
+  </div>
+
+  <div id="fields-over" style="display:none">
+    <div class="field">
+      <label class="lbl">STD</label>
+      <input type="time" id="std-time">
+    </div>
+  </div>
+
+  <div class="sec">Personal que hizo el vuelo</div>
+
+  <div class="field" id="f-ag">
+    <label class="lbl">Selecciona todos los que participaron *</label>
+    <div class="chips" id="chips"></div>
+    <div class="err-msg">Selecciona al menos uno</div>
+  </div>
+
+  <div class="field" id="f-wk">
+    <label class="lbl">Trabajo realizado *</label>
+    <div class="pills">
+      <div class="pill" id="p-desc">🛬 Descarga</div>
+      <div class="pill" id="p-carg">🛫 Carga</div>
+      <div class="pill" id="p-ambo">🔄 Ambos</div>
+    </div>
+    <div class="err-msg">Selecciona uno</div>
+  </div>
+
+  <div class="field">
+    <label class="lbl">Observaciones (opcional)</label>
+    <textarea id="notes" placeholder="Contexto adicional..."></textarea>
+  </div>
+</div>
+
+<div class="foot">
+  <button class="submit" id="submit-btn">Guardar registro</button>
+</div>
+
+<script>
+var _work = '';
+
+// Build chips
+var TEAM = [
+  'Daniel Castro','Jhonatan Pérez','Andy Polanco','Angelini Sosa',
+  'Alexandra Delgado','Arlene Rijo','Sachariel Márquez','Cándido Santana',
+  'Yeidry Hernández','Dalvin Cipriam','Angel Rijo','Sheridam Peña',
+  'Ivan Rivas','Hilda Sánchez','Emil Sánchez','Madelin Delgado',
+  'José Berroa','Arismendy Martes','Fernando Beltre','Alan Paulino',
+  'Katrini Peguero','Hendrix Marte','Esmerling Guillermo','Kenia Candelaria'
+];
+var grid = document.getElementById('chips');
+TEAM.forEach(function(name) {
+  var d = document.createElement('div');
+  d.className = 'chip';
+  d.textContent = name;
+  d.onclick = function() { d.classList.toggle('on'); updateProg(); };
+  grid.appendChild(d);
+});
+
+// Date default
+document.getElementById('flight-date').value = new Date().toISOString().split('T')[0];
+
+// Tipo de operación
+var _tipo = '';
+function selectTipo(val) {
+  _tipo = val;
+  ['tipo-normal','tipo-over'].forEach(function(id){ document.getElementById(id).classList.remove('on'); });
+  document.getElementById('tipo-' + val).classList.add('on');
+  document.getElementById('fields-normal').style.display = val === 'normal' ? 'block' : 'none';
+  document.getElementById('fields-over').style.display  = val === 'over'   ? 'block' : 'none';
+}
+
+// Work pills
+document.getElementById('p-desc').onclick = function() { selectWork('Descarga'); };
+document.getElementById('p-carg').onclick = function() { selectWork('Carga'); };
+document.getElementById('p-ambo').onclick = function() { selectWork('Ambos'); };
+
+function selectWork(val) {
+  _work = val;
+  ['p-desc','p-carg','p-ambo'].forEach(function(id){ document.getElementById(id).classList.remove('on'); });
+  var map = { 'Descarga':'p-desc', 'Carga':'p-carg', 'Ambos':'p-ambo' };
+  document.getElementById(map[val]).classList.add('on');
+  document.getElementById('f-wk').classList.remove('bad');
+}
+
+// Progress
+function updateProg() {
+  var n = [
+    document.getElementById('flight-num').value.trim(),
+    document.getElementById('airline').value,
+    document.getElementById('flight-date').value,
+    document.querySelectorAll('.chip.on').length > 0 ? 'y' : ''
+  ].filter(Boolean).length;
+  document.getElementById('prog').style.width = (n / 4 * 100) + '%';
+}
+document.getElementById('flight-num').oninput = updateProg;
+document.getElementById('airline').onchange = updateProg;
+
+// Otra aerolínea toggle
+window.handleAirline = function(val) {
+  var custom = document.getElementById('airline-custom');
+  custom.style.display = val === '__otra__' ? 'block' : 'none';
+  if (val !== '__otra__') custom.value = '';
+  updateProg();
+};
+document.getElementById('flight-date').onchange = updateProg;
+
+// Submit button wired here — submitForm defined below by module
+document.getElementById('submit-btn').onclick = function() {
+  if (typeof submitForm === 'function') submitForm();
+  else alert('Cargando Firebase, intenta de nuevo en un momento.');
+};
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── PEGA TU CONFIGURACIÓN DE FIREBASE AQUÍ ───────────────────────
+const firebaseConfig = {
+  apiKey: "REPLACE_API_KEY",
+  authDomain: "REPLACE_AUTH_DOMAIN",
+  projectId: "REPLACE_PROJECT_ID",
+  storageBucket: "REPLACE_STORAGE_BUCKET",
+  messagingSenderId: "REPLACE_SENDER_ID",
+  appId: "REPLACE_APP_ID"
+};
+// ─────────────────────────────────────────────────────────────────
+
+let db;
+try {
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+} catch(e) {
+  console.warn('Firebase config pendiente:', e.message);
+}
+
+window.submitForm = async function() {
+  let valid = true;
+
+  const fn = document.getElementById('flight-num').value.trim();
+  document.getElementById('f-fn').classList.toggle('bad', !fn);
+  if (!fn) valid = false;
+
+  let al = document.getElementById('airline').value;
+  if (al === '__otra__') al = document.getElementById('airline-custom').value.trim();
+  document.getElementById('f-al').classList.toggle('bad', !al);
+  if (!al) valid = false;
+
+  const dt = document.getElementById('flight-date').value;
+  document.getElementById('f-dt').classList.toggle('bad', !dt);
+  if (!dt) valid = false;
+
+  const agents = [...document.querySelectorAll('.chip.on')].map(c => c.textContent);
+  document.getElementById('f-ag').classList.toggle('bad', agents.length === 0);
+  if (agents.length === 0) valid = false;
+
+  document.getElementById('f-wk').classList.toggle('bad', !_work);
+  if (!_work) valid = false;
+
+  if (!valid) return;
+
+  if (!db) {
+    alert('Firebase no está configurado aún.\nAgrega tu configuración en el archivo para guardar datos.');
+    return;
+  }
+
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('submit-btn').disabled = true;
+
+  try {
+    const timeData = _tipo === 'over'
+      ? { std: document.getElementById('std-time').value }
+      : { bloqueo: document.getElementById('sched-time').value, etd: document.getElementById('actual-time').value };
+
+    await addDoc(collection(db, 'understaffed_flights'), {
+      flightNum: fn.toUpperCase(),
+      airline: al,
+      gate: document.getElementById('gate').value.trim().toUpperCase(),
+      date: dt,
+      tipo: _tipo,
+      ...timeData,
+      workType: _work,
+      agents,
+      agentCount: agents.length,
+      notes: document.getElementById('notes').value.trim(),
+      createdAt: serverTimestamp()
+    });
+
+    ['flight-num','gate','sched-time','actual-time','std-time','notes'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    document.getElementById('airline').value = '';
+    document.getElementById('airline-custom').value = '';
+    document.getElementById('airline-custom').style.display = 'none';
+    document.getElementById('flight-date').value = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('.chip.on').forEach(c => c.classList.remove('on'));
+    ['p-desc','p-carg','p-ambo','tipo-normal','tipo-over'].forEach(id => document.getElementById(id).classList.remove('on'));
+    document.getElementById('fields-normal').style.display = 'none';
+    document.getElementById('fields-over').style.display = 'none';
+    _work = ''; _tipo = '';
+    document.getElementById('prog').style.width = '0%';
+
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  } catch(err) {
+    alert('Error al guardar:\n' + err.message);
+  }
+
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('submit-btn').disabled = false;
+};
+</script>
+</body>
+</html>
