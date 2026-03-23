@@ -1001,70 +1001,62 @@
     }
 
     function csvValue(v) {
-      const s = (v ?? '').toString().replaceAll('"', '""');
-      return `"${s}"`;
-    }
+  return (v ?? '').toString().replace(/\r?\n/g, ' ').trim();
+}
 
-    function exportCsv() {
-      if (!filteredRecords.length) {
-        alert('No hay registros para exportar.');
-        return;
-      }
+function exportCsv() {
+  if (!filteredRecords.length) {
+    alert('No hay registros para exportar.');
+    return;
+  }
 
-      const rows = [
-        [
-          'Fecha',
-          'Vuelo',
-          'Aerolínea',
-          'Gate / Posición',
-          'Tipo de operación',
-          'Bloqueo',
-          'ETD',
-          'STD',
-          'Trabajo realizado',
-          'Cantidad de agentes',
-          'Personal que hizo el vuelo',
-          'Observaciones',
-          'Fecha y hora de registro',
-          'Nivel de carga operativa',
-          'Soporte extraordinario'
-        ]
-      ];
+  const rows = [
+    [
+      'Fecha',
+      'Vuelo',
+      'Aerolínea',
+      'Gate / Posición',
+      'Tipo de operación',
+      'Bloqueo',
+      'ETD',
+      'STD',
+      'Trabajo realizado',
+      'Cantidad de agentes',
+      'Personal que hizo el vuelo',
+      'Observaciones',
+      'Fecha y hora de registro'
+    ]
+  ];
 
-      filteredRecords.forEach(r => {
-        const count = getAgentCount(r);
+  filteredRecords.forEach(r => {
+    rows.push([
+      r.date || '',
+      r.flightNum || '',
+      r.airline || '',
+      r.gate || '',
+      r.tipo || '',
+      r.bloqueo || '',
+      r.etd || '',
+      r.std || '',
+      r.workType || '',
+      String(r.agentCount || (Array.isArray(r.agents) ? r.agents.length : 0) || 0),
+      Array.isArray(r.agents) ? r.agents.join(' / ') : '',
+      r.notes || '',
+      formatCreatedAt(r.createdAt)
+    ]);
+  });
 
-        rows.push([
-          r.date || '',
-          r.flightNum || '',
-          r.airline || '',
-          r.gate || '',
-          r.tipo === 'over' ? 'OVER' : 'Normal',
-          r.bloqueo || '',
-          r.etd || '',
-          r.std || '',
-          r.workType || '',
-          count,
-          Array.isArray(r.agents) ? r.agents.join(' / ') : '',
-          r.notes || '',
-          formatCreatedAt(r.createdAt),
-          getLoadLevel(count),
-          'Sí'
-        ]);
-      });
+  const tsv = '\uFEFF' + rows.map(row => row.map(csvValue).join('\t')).join('\n');
+  const blob = new Blob([tsv], { type: 'text/tab-separated-values;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
 
-      const csv = rows.map(row => row.map(csvValue).join(';')).join('\n');
-      const csvContent = '\uFEFF' + csv;
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `understaffed-flights-${getTodayString()}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `understaffed-flights-${getTodayString()}.tsv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
     }
 
     async function copySummary() {
