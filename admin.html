@@ -1001,7 +1001,8 @@
     }
 
     function csvValue(v) {
-  return (v ?? '').toString().replace(/\r?\n/g, ' ').trim();
+  const s = (v ?? '').toString().replace(/"/g, '""').replace(/\r?\n/g, ' ').trim();
+  return `"${s}"`;
 }
 
 function exportCsv() {
@@ -1046,13 +1047,15 @@ function exportCsv() {
     ]);
   });
 
-  const tsv = '\uFEFF' + rows.map(row => row.map(csvValue).join('\t')).join('\n');
-  const blob = new Blob([tsv], { type: 'text/tab-separated-values;charset=utf-8;' });
+  const csv = rows.map(row => row.map(csvValue).join(',')).join('\r\n');
+  const csvContent = '\uFEFF' + csv;
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement('a');
   a.href = url;
-  a.download = `understaffed-flights-${getTodayString()}.tsv`;
+  a.download = `understaffed-flights-${getTodayString()}.csv`;
   document.body.appendChild(a);
   a.click();
   a.remove();
